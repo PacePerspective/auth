@@ -6,15 +6,17 @@ import (
 	"time"
 )
 
+var projID string
+
 func TestMain(m *testing.M) {
-	ProjectID = "pace-perspective" // TODO: can't really bind a project name to a package, need to interface out the secret call at some point
+	projID = "pace-perspective" // TODO: can't really bind a project name to a package, need to interface out the secret call at some point
 	m.Run()
 }
 
 func TestCreate(t *testing.T) {
 	ctx, canc := context.WithTimeout(context.Background(), time.Second*10)
 	defer canc()
-	token, err := Create(ctx, "hello@test.com", StandardTokenLife)
+	token, err := Create(ctx, projID, "hello@test.com", StandardTokenLife)
 	if err != nil {
 		t.Error(err)
 		return
@@ -27,13 +29,13 @@ func TestCreate(t *testing.T) {
 func TestVerify(t *testing.T) {
 	ctx, canc := context.WithTimeout(context.Background(), time.Second*10)
 	defer canc()
-	token, err := Create(ctx, "hello2@test.com", StandardTokenLife)
+	token, err := Create(ctx, projID, "hello2@test.com", StandardTokenLife)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	err = Verify(ctx, token)
+	err = Verify(ctx, projID, token)
 	if err != nil {
 		t.Error(err)
 	}
@@ -44,7 +46,7 @@ func TestVerify_BadToken(t *testing.T) {
 	defer canc()
 	incorrectToken := "malformedtoken"
 
-	err := Verify(ctx, incorrectToken)
+	err := Verify(ctx, projID, incorrectToken)
 	if err == nil {
 		t.Error("should have thrown error on malformed token")
 	}
@@ -53,7 +55,7 @@ func TestVerify_BadToken(t *testing.T) {
 func TestVerify_ExpiredToken(t *testing.T) {
 	ctx, canc := context.WithTimeout(context.Background(), time.Second*10)
 	defer canc()
-	token, err := Create(ctx, "hello3@test.com", time.Second*1)
+	token, err := Create(ctx, projID, "hello3@test.com", time.Second*1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -61,7 +63,7 @@ func TestVerify_ExpiredToken(t *testing.T) {
 
 	time.Sleep(time.Second * 3)
 
-	err = Verify(ctx, token)
+	err = Verify(ctx, projID, token)
 	if err == nil {
 		t.Error("should have thrown error on expired token")
 	}
@@ -71,13 +73,13 @@ func TestGetStringFromToken(t *testing.T) {
 	user := "hello4@test.com"
 	ctx, canc := context.WithTimeout(context.Background(), time.Second*10)
 	defer canc()
-	token, err := Create(ctx, user, StandardTokenLife)
+	token, err := Create(ctx, projID, user, StandardTokenLife)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	un, err := GetStringClaimFromToken(ctx, token, "username")
+	un, err := GetStringClaimFromToken(ctx, projID, token, "username")
 	if err != nil {
 		t.Error(err)
 		return
